@@ -11,6 +11,7 @@ using Intersect.Client.Localization;
 using Intersect.Client.Networking;
 using Intersect.GameObjects;
 using Intersect.GameObjects.Crafting;
+using Intersect.Enums;
 
 namespace Intersect.Client.Interface.Game.Crafting
 {
@@ -56,6 +57,8 @@ namespace Intersect.Client.Interface.Game.Crafting
         private Label mLblProduct;
 
         private Label mLblRecipes;
+
+        public bool clickedCraft = false;
 
         //Objects
         private ListBox mRecipes;
@@ -290,66 +293,16 @@ namespace Intersect.Client.Interface.Game.Crafting
             if (Crafting == false)
             {
                 LoadCraftItems((Guid) ((ListBoxRow) sender).UserData);
+                //Uncomment next line for a check before pressing the button so the button gets disabled, disabled by default because some people don't think this is needed
+                //PacketSender.SendCraftRequest((Guid)((ListBoxRow)sender).UserData);
             }
         }
 
-        //Craft the item
+        //Send a Craftrequest
         void craft_Clicked(Base sender, ClickedEventArgs arguments)
         {
-            //This shouldn't be client side :(
-            //Quickly Look through the inventory and create a catalog of what items we have, and how many
-            var availableItemQuantities = new Dictionary<Guid, int>();
-            foreach (var item in Globals.Me.Inventory)
-            {
-                if (item != null)
-                {
-                    if (availableItemQuantities.ContainsKey(item.ItemId))
-                    {
-                        availableItemQuantities[item.ItemId] += item.Quantity;
-                    }
-                    else
-                    {
-                        availableItemQuantities.Add(item.ItemId, item.Quantity);
-                    }
-                }
-            }
-
-            var craftDescriptor = CraftBase.Get(mCraftId);
-            var canCraft = craftDescriptor?.Ingredients != null;
-
-            if (canCraft)
-            {
-                foreach (var ingredient in craftDescriptor.Ingredients)
-                {
-                    if (!availableItemQuantities.TryGetValue(ingredient.ItemId, out var availableQuantity))
-                    {
-                        canCraft = false;
-
-                        break;
-                    }
-
-                    if (availableQuantity < ingredient.Quantity)
-                    {
-                        canCraft = false;
-
-                        break;
-                    }
-
-                    availableItemQuantities[ingredient.ItemId] -= ingredient.Quantity;
-                }
-            }
-
-            if (canCraft)
-            {
-                Crafting = true;
-                mBarTimer = Globals.System.GetTimeMs();
-                PacketSender.SendCraftItem(mCraftId);
-                mCraftWindow.IsClosable = false;
-
-                return;
-            }
-
-            ChatboxMsg.AddMessage(new ChatboxMsg(Strings.Crafting.incorrectresources, Color.Red));
+            PacketSender.SendCraftRequest(mCraftId);
+            clickedCraft = true;
         }
 
         //Update the crafting bar
@@ -357,25 +310,38 @@ namespace Intersect.Client.Interface.Game.Crafting
         {
             if (!mInitialized)
             {
-                for (var i = 0; i < Globals.ActiveCraftingTable?.Crafts?.Count; ++i)
+                //Quickly Look through the inventory and count the luck stat
+                double luck = 0;
+                foreach (var equip in Globals.Me.Equipment)
                 {
+                    if (ItemBase.Get(equip)?.Effect?.Type == EffectType.Luck)
+                    {
+                        luck += ItemBase.Get(equip).Effect.Percentage;
+                    }
+                }            
+                var j = 0;
+                for (var i = 0; i < Globals.ActiveCraftingTable?.Crafts?.Count; ++i)
+                {                    
                     var activeCraft = CraftBase.Get(Globals.ActiveCraftingTable.Crafts[i]);
                     if (activeCraft == null)
                     {
                         continue;
                     }
-
-                    var tmpRow = mRecipes?.AddRow(i + 1 + ") " + ItemBase.GetName(activeCraft.ItemId));
-                    if (tmpRow == null)
+                    if (!Globals.ActiveCraftingTableReqs.Contains(i + "-"))
                     {
-                        continue;
-                    }
+                        j++;
+                        var tmpRow = mRecipes?.AddRow(j + ") " + ItemBase.GetName(activeCraft.ItemId) + " (" + Math.Min(activeCraft.SuccessRate+(luck/10),100) + "%) ");
+                        if (tmpRow == null)
+                        {
+                            continue;
+                        }
 
-                    tmpRow.UserData = Globals.ActiveCraftingTable.Crafts[i];
-                    tmpRow.DoubleClicked += tmpNode_DoubleClicked;
-                    tmpRow.Clicked += tmpNode_DoubleClicked;
-                    tmpRow.SetTextColor(Color.White);
-                    tmpRow.RenderColor = new Color(50, 255, 255, 255);
+                        tmpRow.UserData = Globals.ActiveCraftingTable.Crafts[i];
+                        tmpRow.DoubleClicked += tmpNode_DoubleClicked;
+                        tmpRow.Clicked += tmpNode_DoubleClicked;
+                        tmpRow.SetTextColor(Color.White);
+                        tmpRow.RenderColor = new Color(50, 255, 255, 255);
+                    }
                 }
 
                 //Load the craft data
@@ -386,6 +352,32 @@ namespace Intersect.Client.Interface.Game.Crafting
 
                 mInitialized = true;
             }
+
+            //We received green light to craft, continue crafting
+            if (Globals.canCraftrq && clickedCraft)
+            {
+                Crafting = true;
+                mBarTimer = Globals.System.GetTimeMs();
+                PacketSender.SendCraftItem(Globals.canCraftitem);
+                mCraftWindow.IsClosable = false;
+                Globals.canCraftrq = false;
+                Globals.canCraftitem = Guid.Empty;
+                clickedCraft = false;
+                return;
+            }
+
+            //Uncomment next lines to have the craftbutton disable if requirements are not met
+            /*
+            if (!Globals.canCraftrq)
+            {
+                mCraft.Disable();
+            }
+
+            if (Globals.canCraftrq)
+            {
+                mCraft.Enable();
+            }
+            */
 
             if (!Crafting)
             {

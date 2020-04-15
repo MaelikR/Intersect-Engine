@@ -1162,11 +1162,26 @@ namespace Intersect.Client.Networking
             {
                 Globals.ActiveCraftingTable = new CraftingTableBase();
                 Globals.ActiveCraftingTable.Load(packet.TableData);
+                Globals.ActiveCraftingTableReqs = packet.ReqCheck;
                 Interface.Interface.GameUi.NotifyOpenCraftingTable();
             }
             else
             {
                 Interface.Interface.GameUi.NotifyCloseCraftingTable();
+            }
+        }
+
+        //CraftStartPacket
+        private static void HandlePacket(CraftStartPacket packet)
+        {
+            if (!packet.Canstart)
+            {
+                Globals.canCraftrq = false;
+            }
+            else
+            {
+                Globals.canCraftrq = true;
+                Globals.canCraftitem = packet.CraftData;
             }
         }
 

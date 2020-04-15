@@ -1394,6 +1394,17 @@ namespace Intersect.Server.Networking
             player.CraftTimer = Globals.Timing.TimeMs;
         }
 
+        //CraftRequestPacket
+        public void HandlePacket(Client client, Player player, CraftRequestPacket packet)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.CraftRequestId = packet.CraftId;
+        }
+
         //CloseBankPacket
         public void HandlePacket(Client client, Player player, CloseBankPacket packet)
         {

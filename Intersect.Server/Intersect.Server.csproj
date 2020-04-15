@@ -480,6 +480,14 @@
     <Compile Include="Entities\Pathfinding\SpatialAStar.cs" />
     <Compile Include="Entities\Pathfinding\PathfinderTarget.cs" />
     <Compile Include="Entities\Pathfinding\PriorityQueue.cs" />
+    <Compile Include="Migrations\Game\20200404164233_ExtendedCraftingNew.cs" />
+    <Compile Include="Migrations\Game\20200404164233_ExtendedCraftingNew.designer.cs">
+      <DependentUpon>20200404164233_ExtendedCraftingNew.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Game\20200404174804_CraftRequirementsv2.cs" />
+    <Compile Include="Migrations\Game\20200404174804_CraftRequirementsv2.designer.cs">
+      <DependentUpon>20200404174804_CraftRequirementsv2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Entities\Npc.cs" />
     <Compile Include="Networking\Helpers\NetDebug.cs" />

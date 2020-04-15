@@ -42,6 +42,10 @@ namespace Intersect.Editor.Forms.Editors
             cmbIngredient.Items.Clear();
             cmbIngredient.Items.Add(Strings.General.none);
             cmbIngredient.Items.AddRange(ItemBase.Names);
+            //CraftEvent
+            cmbCraftEvent.Items.Clear();
+            cmbCraftEvent.Items.Add(Strings.General.none);
+            cmbCraftEvent.Items.AddRange(GameObjects.Events.EventBase.Names);
         }
 
         protected override void GameObjectUpdatedDelegate(GameObjectType type)
@@ -78,6 +82,10 @@ namespace Intersect.Editor.Forms.Editors
                 nudQuantity.Hide();
                 lblQuantity.Hide();
                 lblIngredient.Hide();
+                //Success Rate
+                nudSuccessRate.Value = mEditorItem.SuccessRate;
+                //Craft Event
+                cmbCraftEvent.SelectedIndex = GameObjects.Events.EventBase.ListIndex(mEditorItem.CraftEventId) + 1;
                 for (var i = 0; i < mEditorItem.Ingredients.Count; i++)
                 {
                     if (mEditorItem.Ingredients[i].ItemId != Guid.Empty)
@@ -162,6 +170,11 @@ namespace Intersect.Editor.Forms.Editors
         private void nudSpeed_ValueChanged(object sender, EventArgs e)
         {
             mEditorItem.Time = (int) nudSpeed.Value;
+        }
+
+        private void nudSuccessRate_ValueChanged(object sender, EventArgs e)
+        {
+            mEditorItem.SuccessRate = (int)nudSuccessRate.Value;
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -312,6 +325,11 @@ namespace Intersect.Editor.Forms.Editors
             }
         }
 
+        private void cmbCraftEvent_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            mEditorItem.CraftEvent = GameObjects.Events.EventBase.Get(GameObjects.Events.EventBase.IdFromList(cmbCraftEvent.SelectedIndex - 1));
+        }
+
         private void lstIngredients_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (updatingIngedients)
@@ -435,6 +453,14 @@ namespace Intersect.Editor.Forms.Editors
 
             btnSave.Text = Strings.CraftsEditor.save;
             btnCancel.Text = Strings.CraftsEditor.cancel;
+            lblCraftEvent.Text = Strings.CraftsEditor.craftevent;
+            lblSuccessRate.Text = Strings.CraftsEditor.successrate;
+            btnEditRequirements.Text = Strings.ItemEditor.craftrequirements;
+        }
+        private void btnEditRequirements_Click(object sender, EventArgs e)
+        {
+            var frm = new FrmDynamicRequirements(mEditorItem.CraftRequirements, RequirementType.Craft);
+            frm.ShowDialog();
         }
 
         private void nudCraftQuantity_ValueChanged(object sender, EventArgs e)
